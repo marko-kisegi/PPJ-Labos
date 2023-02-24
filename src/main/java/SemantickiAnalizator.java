@@ -1,20 +1,7 @@
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class SemantickiAnalizator {
-
-
-    Token token = new Token();
-    public class Token {
-        public String name;
-        public Integer line;
-
-
-        public boolean equals(Token obj) {
-            return this.name.equals( obj.name );
-        }
-    }
-// <br_retka_koristenja> <br_retka_definicije> <leksicka_jedinka
-// err <br_retka> <leksicka_jedinka>
 
     public static void main(String[] args) {
         List<String> arrayList = new ArrayList<>();
@@ -22,46 +9,67 @@ public class SemantickiAnalizator {
         while(sc.hasNext()){
             arrayList.add(sc.nextLine());
         }
-
-        Map<Integer, Map<Integer, String>> mapValues = new HashMap<>(); // stavi pojavu neke v
+        Map<Integer, Map<String, Integer>> map = new TreeMap<>();
+        Map<Integer, Map<String, Integer>> teamMap = new TreeMap<>();
         int j = 0;
-        for (int i = 0 ; i < arrayList.size(); i++){
-            String s = arrayList.get(i);
-            if( s.startsWith("KR_AZ") ){
-                mapValues.remove(j);
+        map.put(j, new TreeMap<>());
+        for ( int i = 0 ; i < arrayList.size() ; i++){
+            String line = arrayList.get(i).strip();
+            if (line.startsWith("KR_AZ")){
+                map.remove(j);
                 j--;
-            } else if ( s.startsWith("IDN") ){
-                String temp = arrayList.get(i-1);
-                if (temp.contains("KR_ZA")){ //     IDN 2 y
-                    j++;
-                    Map<Integer, String> tempMap = new HashMap<>();
-                    String[] help = s.split(" ");
-                    tempMap.put( Integer.valueOf(help[1]) , help[2]);
-                    mapValues.put(j, tempMap);
-                }
+            }
 
-                if (temp.contains("<naredba_pridruzivanja>")){
-                    Map<Integer, String> tempMap = mapValues.get(j);
-                    String[] help = s.split(" ");
-                    tempMap.put( Integer.valueOf(help[1]) , help[2]);
-                    mapValues.put(j, tempMap);
+            else if (line.startsWith("IDN")){
+                String string = arrayList.get(i-1).strip();
+                //      IDN 5 i
+                String[] strings = line.split(" ");
+                Map<String, Integer> tempMap = new TreeMap<>();
+                String[] petlja = string.split(" ");
+                if(petlja[0].equals("KR_ZA")){
+                    tempMap.put(strings[2], Integer.valueOf(strings[1]));
+                    j++;
+                    map.put(j, tempMap);
+                }
+                else if (string.equals("<naredba_pridruzivanja>")){
+                    boolean keyFound = false;
+                    // pogledaj jel kljuc unutra vec
+                    Map<String, Integer> helpMap = new TreeMap<>();
+                    tempMap.put(strings[2], Integer.valueOf(strings[1]));
+                    for (Map<String, Integer> map1 : map.values()){
+                        if(map1.containsKey(strings[2])){
+                            keyFound = true;
+                        }
+                    }
+                    // ako kljuc nije naden onda stavi
+                    if (!keyFound){
+                        Map<String, Integer> map2 = map.get(j);
+                        map2.put(strings[2], Integer.valueOf(strings[1]));
+                        map.put(j, map2);
+                    }
+
                 }
                 else {
-                    String[] help = s.split(" ");
-                    Boolean isIn = false;
-                    for (Map.Entry<Integer,Map<Integer, String>> entry : mapValues.entrySet()) {
-                            System.out.println("Key = " + entry.getKey() +
-                                    ", Value = " + entry.getValue());
+                    boolean isUsed = false;
+
+                    Map<String, Integer> helpMap = new TreeMap<>();
+                    for (Map<String, Integer> map1 : map.values()){
+                        if(map1.containsKey(strings[2])){
+                            isUsed = true;
+                            helpMap = map1;
                         }
-
-
+                    }
+                    if (isUsed) {
+                        System.out.println(strings[1] + " " + helpMap.get(strings[2]) + " " + strings[2]);
+                    }
+                    else {
+                        System.out.println("err " + strings[1] + " " + strings[2]);
+                        return;
+                    }
                 }
-
-
-                }
-                
-
+            }
         }
 
     }
+
 }
